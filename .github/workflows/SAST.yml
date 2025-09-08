@@ -1,0 +1,57 @@
+stages:
+  - build
+  - test
+  - sast
+  - dast
+  - audit
+
+# Build de l'image Flask
+build_app:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t my-vuln-app ./app
+  only:
+    - branches
+
+# SAST avec SonarQube
+sonar_scan:
+  stage: sast
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    SONAR_HOST_URL: "http://sonarqube:9000"
+  script:
+    - sonar-scanner -Dsonar.projectKey=$CI_PROJECT_NAME -Dsonar.sources=app -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+  only:
+    - branches
+
+# DAST avec OWASP ZAP
+dast_zap:
+  stage: dast
+  image: owasp/zap2docker-stable
+  variables:
+    APP_URL: "http://app:5000"
+  script:
+    - zap-baseline.py -t "$APP_URL" -r zap_report.html
+  artifacts:
+    when: always
+    paths:
+      - zap_report.html
+  only:
+    - branches
+
+# Audit dépendances Python (pip-audit)
+dep_audit:
+  stage: audit
+  image: python:3.10-slim
+  before_script:
+    - pip install pip-audit
+  script:
+    - pip-audit -r app/requirements.txt --format=json > pip_audit.json
+  artifacts:
+    paths:
+      - pip_audit.json
+  only:
+    - branches
