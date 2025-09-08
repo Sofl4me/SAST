@@ -47,7 +47,7 @@ f"...{name}..." injecte la valeur brute dans le HTML.
 ---
 
 ## 📑 Exemple de rapport
-Un rapport HTML détaillé est disponible :  
+Un rapport détaillé est disponible :  
 
 ![Analyse SonarCloud Report](./doc/sonarcloud1.png)
 ![Analyse SonarCloud Report](./doc/sonarcloud2.png)
@@ -322,7 +322,7 @@ Objectif : détecter les **vulnérabilités connues (CVE)** dans les dépendance
 ---
 
 ## 📑 Exemple de rapport
-Un rapport HTML détaillé est disponible :  
+Un rapport détaillé est disponible :  
 
 ![Analyse Pip Audit Report](./doc/pip-audit.png)
 
