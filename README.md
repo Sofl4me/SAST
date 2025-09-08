@@ -178,10 +178,16 @@ Objectif : illustrer la détection de failles de configuration et de sécurité 
     ```
 
 ---
-
 ## 📑 Exemple de rapport
 Un rapport HTML détaillé est disponible :  
 ![Analyse ZAP Report](./artifacts/zap_report.html)
+![Analyse ZAP Report](./doc/zap1.png)
+![Analyse ZAP Report](./doc/zap2.png)
+![Analyse ZAP Report](./doc/zap3.png)
+![Analyse ZAP Report](./doc/zap4.png)
+![Analyse ZAP Report](./doc/zap5.png)
+![Analyse ZAP Report](./doc/zap6.png)
+![Analyse ZAP Report](./doc/zap7.png)
 
 ---
 
