@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build Docker Image
-        run: docker build -t sast ./app
+        run: docker build -t ./sast/app/app.py
 
   sonar_scan:
     name: SAST with SonarQube
