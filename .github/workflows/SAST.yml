@@ -2,9 +2,7 @@ name: Security Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [ "main", "dev" ]
   pull_request:
 
 jobs:
@@ -13,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Build Docker Image
         run: docker build -t my-vuln-app ./SAST/app
 
@@ -22,10 +21,17 @@ jobs:
     needs: build_app
     steps:
       - uses: actions/checkout@v3
+
+      # Action recommandée (l'ancienne est dépréciée)
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         with:
           projectBaseDir: SAST
+          # On passe explicitement key/org pour éviter "Project root configuration file: NONE"
+          args: >
+            -Dsonar.projectKey=sof-org_SAST
+            -Dsonar.organization=sof-org
+            -Dsonar.sources=app
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: "https://sonarcloud.io"
@@ -36,18 +42,35 @@ jobs:
     needs: build_app
     steps:
       - uses: actions/checkout@v3
+
+      # On démarre l'app pour que ZAP ait une cible atteignable
+      - name: Run app container
+        run: |
+          docker run -d --rm -p 5000:5000 --name vulnapp my-vuln-app
+          # petite attente pour que Flask soit up
+          for i in {1..20}; do
+            curl -fsS http://localhost:5000 && break
+            sleep 1
+          done
+
       - name: Run OWASP ZAP baseline scan
         run: |
           mkdir -p reports
-          docker run --rm -v ${{ github.workspace }}/reports:/zap/reports \
+          docker run --rm --network host \
+            -v ${{ github.workspace }}/reports:/zap/reports \
             owasp/zap2docker-stable zap-baseline.py \
-            -t http://host.docker.internal:5000 \
+            -t http://localhost:5000 \
             -r /zap/reports/zap_report.html
+
       - name: Upload ZAP report
         uses: actions/upload-artifact@v3
         with:
           name: zap-report
           path: reports/zap_report.html
+
+      - name: Stop app container
+        if: always()
+        run: docker stop vulnapp || true
 
   dep_audit:
     name: Dependency Audit (pip-audit)
@@ -55,10 +78,13 @@ jobs:
     needs: build_app
     steps:
       - uses: actions/checkout@v3
+
       - name: Install pip-audit
         run: pip install pip-audit
+
       - name: Run pip-audit
         run: pip-audit -r SAST/app/requirements.txt --format=json > pip_audit.json
+
       - name: Upload audit results
         uses: actions/upload-artifact@v3
         with:
