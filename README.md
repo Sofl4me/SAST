@@ -94,16 +94,102 @@ Objectif : illustrer la détection de failles de configuration et de sécurité 
 
 ---
 
-## 🚨 Résultat ZAP
+📊 Analyse du rapport ZAP
 
-### Ce que ZAP a détecté
-- **High (Critique)** : 0  
-- **Medium (Moyen)** : 2  
-- **Low (Faible)** : 3  
-- **Informational (Infos)** : 1  
+L’outil OWASP ZAP (version 2.16.1) a été exécuté sur notre application (http://localhost:5000
+).
+Le scan a mis en évidence plusieurs points de sécurité, dont voici la synthèse :
 
-👉 Bonne nouvelle : pas de vulnérabilité critique.  
-Cependant, plusieurs points de configuration de sécurité manquent, ce qui expose l’application à certains risques.
+🔎 Résumé des résultats
+
+High (élevé) : 0
+
+Medium (moyen) : 2
+
+Low (faible) : 3
+
+Informational (info) : 1
+
+False Positive : 0
+
+👉 Globalement, aucune vulnérabilité critique n’a été détectée, mais des faiblesses de configuration doivent être corrigées pour améliorer la sécurité.
+
+⚠️ Vulnérabilités de niveau Medium
+
+Content Security Policy (CSP) Header Not Set
+
+Description : l’application ne définit pas de politique CSP. Cela laisse la porte ouverte aux attaques XSS et à l’injection de contenu.
+
+Occurrences : 4 (page d’accueil, /, robots.txt, sitemap.xml).
+
+Solution : ajouter un en-tête HTTP Content-Security-Policy précisant les sources autorisées (script-src, style-src, etc.).
+
+Référence : MDN CSP
+.
+
+Missing Anti-clickjacking Header
+
+Description : absence d’en-tête X-Frame-Options ou de directive frame-ancestors (CSP). Cela expose au clickjacking.
+
+Occurrences : 2 (/ et page d’accueil).
+
+Solution : ajouter X-Frame-Options: DENY ou SAMEORIGIN ; ou bien configurer Content-Security-Policy: frame-ancestors 'none'.
+
+⚠️ Vulnérabilités de niveau Low
+
+Insufficient Site Isolation Against Spectre
+
+Description : absence des en-têtes Cross-Origin-Resource-Policy, Cross-Origin-Embedder-Policy, Cross-Origin-Opener-Policy.
+
+Impact : faiblesse contre les attaques de type Spectre (side-channel).
+
+Occurrences : 6.
+
+Solution : définir les en-têtes (Cross-Origin-Resource-Policy: same-origin, etc.) pour renforcer l’isolation.
+
+Permissions Policy Header Not Set
+
+Description : l’en-tête Permissions-Policy (ex-Feature-Policy) est manquant. Cela permet potentiellement à des scripts d’utiliser des API sensibles (micro, caméra, géolocalisation).
+
+Occurrences : 4.
+
+Solution : définir une politique stricte, par ex. :
+
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+
+
+X-Content-Type-Options Header Missing
+
+Description : absence de X-Content-Type-Options: nosniff. Cela permet à un navigateur d’interpréter un fichier comme un autre type MIME.
+
+Occurrences : 2.
+
+Solution : ajouter l’en-tête X-Content-Type-Options: nosniff.
+
+ℹ️ Observation de type Informational
+
+Storable and Cacheable Content
+
+Certains contenus statiques (ex. robots.txt) sont mis en cache.
+
+Impact faible, mais une politique de cache maîtrisée est recommandée.
+
+![Analyse ZAP Report](./artifacts/zap_rreporrt.html)
+
+✅ Conclusion
+
+Le rapport montre que :
+
+L’application ne présente pas de vulnérabilité critique (aucun High).
+
+Les failles sont essentiellement des manques de headers de sécurité dans les réponses HTTP.
+
+La remédiation passe principalement par la configuration du serveur ou du framework (Flask/Gunicorn).
+
+👉 Une fois les en-têtes ajoutés, une nouvelle analyse devrait confirmer une amélioration nette du score de sécurité.
+
+En appliquant l’une des corrections ci-dessus, la règle Sonar sera respectée et la vulnérabilité supprimée.
+
 
 ---
 
