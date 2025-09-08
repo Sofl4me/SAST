@@ -38,15 +38,16 @@ Sonar montre le flux en 5 étapes :
 name = request.args.get('name', 'visiteur')
 return render_template_string(f"<h1>Bonjour {name}</h1>")
 name provient directement de la requête (non validé, non échappé).
+```
 
 f"...{name}..." injecte la valeur brute dans le HTML.
 
-✅ Solutions de correction
+## ✅ Solutions de correction
+
 1) Utiliser un template Jinja (recommandé)
 Jinja2 applique l’auto-escape par défaut.
 
-python
-Copier le code
+```python
 from flask import Flask, render_template, request
 
 @app.route("/")
@@ -55,28 +56,23 @@ def index():
     return render_template("index.html", name=name)
 templates/index.html
 
-html
-Copier le code
 <h1>Bonjour {{ name }}</h1>  <!-- auto-échappé -->
-2) Avec render_template_string (échappement explicite)
-python
-Copier le code
 from flask import Flask, request, render_template_string
 
 @app.route("/")
 def index():
     name = request.args.get("name", "visiteur")
     return render_template_string("<h1>Bonjour {{ name|e }}</h1>", name=name)
-3) Échapper côté Python (moins idiomatique Flask)
-python
-Copier le code
+
 from markupsafe import escape
 
 @app.route("/")
 def index():
     name = escape(request.args.get("name", "visiteur"))
     return f"<h1>Bonjour {name}</h1>"
-💡 Bonnes pratiques
+```
+
+## 💡 Bonnes pratiques
 Ne jamais désactiver l’auto-escape Jinja.
 
 Toujours valider et normaliser les entrées (longueur, charset, liste blanche).
@@ -85,7 +81,7 @@ Séparer logique et présentation (éviter f-strings HTML avec inputs).
 
 Intégrer SonarQube dans le pipeline CI/CD pour détecter automatiquement ces vulnérabilités.
 
-✅ Conclusion
+## ✅ Conclusion
 Le pipeline a correctement rempli sa mission :
 
 Il a généré une app Flask vulnérable.
