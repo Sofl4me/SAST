@@ -47,7 +47,6 @@ jobs:
       - name: Run app container
         run: |
           set -e
-          # Ne pas utiliser --rm pour pouvoir lire les logs si le conteneur s'arrête
           docker run -d -p 5000:5000 --name vulnapp my-vuln-app:latest
 
           echo "Attente que l'app réponde..."
@@ -57,7 +56,6 @@ jobs:
               break
             fi
 
-            # Si le conteneur est tombé, afficher les logs et échouer
             if ! docker ps --format '{{.Names}}' | grep -q '^vulnapp$'; then
               echo "Container 'vulnapp' is not running. Logs:"
               docker logs vulnapp || true
@@ -70,18 +68,16 @@ jobs:
         run: |
           mkdir -p reports
           docker run --rm --network host \
-            -v ${{ github.workspace }}/reports:/zap/reports \
+            -v ${{ github.workspace }}/reports:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable \
             /zap/zap-baseline.py \
               -t http://localhost:5000 \
-              -r /zap/reports/zap_report.html || true
+              -r zap_report.html || true
 
-          # Vérifie si le rapport a bien été généré
           if [ ! -f reports/zap_report.html ]; then
             echo "⚠️ Aucun rapport généré par ZAP, création d’un placeholder"
             echo "<html><body><h1>Pas de rapport généré par OWASP ZAP</h1></body></html>" > reports/zap_report.html
           fi
-
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
@@ -94,6 +90,7 @@ jobs:
         run: |
           docker logs vulnapp || true
           docker rm -f vulnapp || true
+
 
   dep_audit:
     name: Dependency Audit (pip-audit)
