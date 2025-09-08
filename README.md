@@ -310,6 +310,12 @@ Objectif : détecter les **vulnérabilités connues (CVE)** dans les dépendance
 
 ---
 
+## 📑 Exemple de rapport
+Un rapport HTML détaillé est disponible :  
+![Analyse Pip Audit Report](./doc/pip-audit.png)
+
+---
+
 ## ✅ Comment corriger
 Mettre à jour Flask et Werkzeug vers des versions corrigées :
 ```bash
