@@ -54,16 +54,24 @@ from flask import Flask, render_template, request
 def index():
     name = request.args.get("name", "visiteur")
     return render_template("index.html", name=name)
+```
 templates/index.html
 
+```python
 <h1>Bonjour {{ name }}</h1>  <!-- auto-échappé -->
-from flask import Flask, request, render_template_string
+```
 
+Avec render_template_string (échappement explicite)
+
+from flask import Flask, request, render_template_string
+```python
 @app.route("/")
 def index():
     name = request.args.get("name", "visiteur")
     return render_template_string("<h1>Bonjour {{ name|e }}</h1>", name=name)
-
+```
+3) Échapper côté Python (moins idiomatique Flask)
+```python
 from markupsafe import escape
 
 @app.route("/")
