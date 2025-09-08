@@ -28,7 +28,7 @@ jobs:
           projectBaseDir: SAST
           args: >
             -Dsonar.projectKey=Sofl4me_SAST
-            -Dsonar.organization=sof4me
+            -Dsonar.organization=sofl4me
             -Dsonar.sources=app
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
