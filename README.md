@@ -4,6 +4,8 @@
 Ce projet met en place un pipeline qui déploie une **application Flask volontairement vulnérable**, puis l’analyse avec **SonarQube**.  
 Objectif : illustrer la détection automatique d’une faille de type **Cross-Site Scripting (XSS)**.
 
+![Analyse CD-CI Report](./doc/ci-cd.png)
+
 ---
 
 ## 🚨 Résultat SonarQube
@@ -42,6 +44,15 @@ name provient directement de la requête (non validé, non échappé).
 
 f"...{name}..." injecte la valeur brute dans le HTML.
 
+---
+
+## 📑 Exemple de rapport
+Un rapport HTML détaillé est disponible :  
+
+![Analyse SonarCloud Report](./doc/sonarcloud1.png)
+![Analyse SonarCloud Report](./doc/sonarcloud2.png)
+
+---
 ## ✅ Solutions de correction
 
 1) Utiliser un template Jinja (recommandé)
@@ -312,6 +323,7 @@ Objectif : détecter les **vulnérabilités connues (CVE)** dans les dépendance
 
 ## 📑 Exemple de rapport
 Un rapport HTML détaillé est disponible :  
+
 ![Analyse Pip Audit Report](./doc/pip-audit.png)
 
 ---
