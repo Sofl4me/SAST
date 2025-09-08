@@ -81,19 +81,111 @@ def index():
 ```
 
 ## 💡 Bonnes pratiques
-Ne jamais désactiver l’auto-escape Jinja.
+- Ne jamais désactiver l’auto-escape Jinja.
+- Toujours valider et normaliser les entrées (longueur, charset, liste blanche).
+- Séparer logique et présentation (éviter f-strings HTML avec inputs).
+- Intégrer SonarQube dans le pipeline CI/CD pour détecter automatiquement ces vulnérabilités.
 
-Toujours valider et normaliser les entrées (longueur, charset, liste blanche).
+# 🔐 Démo Flask & Analyse OWASP ZAP
 
-Séparer logique et présentation (éviter f-strings HTML avec inputs).
+## 📌 Contexte
+Ce projet met en place un pipeline qui déploie une **application Flask volontairement vulnérable**, puis l’analyse automatiquement avec **OWASP ZAP**.  
+Objectif : illustrer la détection de failles de configuration et de sécurité HTTP côté **runtime** (application en exécution).
 
-Intégrer SonarQube dans le pipeline CI/CD pour détecter automatiquement ces vulnérabilités.
+---
+
+## 🚨 Résultat ZAP
+
+### Ce que ZAP a détecté
+- **High (Critique)** : 0  
+- **Medium (Moyen)** : 2  
+- **Low (Faible)** : 3  
+- **Informational (Infos)** : 1  
+
+👉 Bonne nouvelle : pas de vulnérabilité critique.  
+Cependant, plusieurs points de configuration de sécurité manquent, ce qui expose l’application à certains risques.
+
+---
+
+## 🔎 Détail des alertes
+
+### 🔶 Risque Moyen
+1. **Content Security Policy (CSP) Header Not Set**  
+   - **Problème** : aucun en-tête CSP n’est défini.  
+   - **Impact** : l’application est exposée aux attaques XSS et injections de contenu.  
+   - **Correction** :
+     ```python
+     @app.after_request
+     def set_csp(response):
+         response.headers["Content-Security-Policy"] = "default-src 'self'"
+         return response
+     ```
+
+2. **Missing Anti-clickjacking Header**  
+   - **Problème** : pas d’en-tête `X-Frame-Options`.  
+   - **Impact** : l’application peut être intégrée dans un iframe malveillant (*clickjacking*).  
+   - **Correction** :
+     ```python
+     @app.after_request
+     def set_xframe(response):
+         response.headers["X-Frame-Options"] = "DENY"
+         return response
+     ```
+
+---
+
+### 🟡 Risque Faible
+1. **Insufficient Site Isolation Against Spectre Vulnerability**  
+   - **Problème** : certains en-têtes de protection contre les attaques CPU (Spectre) manquent.  
+   - **Correction** :
+     ```
+     Cross-Origin-Opener-Policy: same-origin
+     Cross-Origin-Resource-Policy: same-origin
+     ```
+
+2. **Permissions Policy Header Not Set**  
+   - **Problème** : pas de politique fine sur les API navigateur (caméra, micro, etc.).  
+   - **Correction** :
+     ```
+     Permissions-Policy: geolocation=(), microphone=()
+     ```
+
+3. **X-Content-Type-Options Header Missing**  
+   - **Problème** : l’en-tête `X-Content-Type-Options: nosniff` est absent.  
+   - **Impact** : certains navigateurs peuvent interpréter des contenus avec le mauvais type MIME.  
+   - **Correction** :
+     ```python
+     response.headers["X-Content-Type-Options"] = "nosniff"
+     ```
+
+---
+
+### 🔵 Informationnel
+- **Storable and Cacheable Content**  
+  - **Problème** : certains contenus peuvent être stockés ou mis en cache.  
+  - **Impact** : pas critique, mais peut poser problème si des données sensibles sont concernées.  
+  - **Correction** : définir des en-têtes HTTP adaptés, par exemple :  
+    ```
+    Cache-Control: no-store
+    Pragma: no-cache
+    ```
+
+---
+
+## 💡 Bonnes pratiques
+
+- Toujours configurer des **en-têtes HTTP de sécurité** (CSP, X-Frame-Options, X-Content-Type-Options, etc.).  
+- Empêcher le *clickjacking* et limiter les API navigateur accessibles.  
+- Définir des politiques claires de cache pour éviter la fuite de données sensibles.  
+- Garder **ZAP** dans le pipeline CI/CD : il détecte les failles runtime que SonarQube (analyse statique) ne voit pas.
+
+---
 
 ## ✅ Conclusion
-Le pipeline a correctement rempli sa mission :
+- **SonarQube** → détecte les failles **dans le code source** (ex. XSS).  
+- **ZAP** → détecte les failles **au runtime** (mauvaises configurations HTTP, en-têtes manquants, comportements risqués).  
 
-Il a généré une app Flask vulnérable.
+En combinant les deux outils dans ton pipeline CI/CD, tu obtiens une **analyse de sécurité complète** :  
+- Vérification **statique** (code).  
+- Vérification **dynamique** (application en exécution).  
 
-SonarQube a identifié une faille XSS (injection de contenu utilisateur non échappé).
-
-En appliquant l’une des corrections ci-dessus, la règle Sonar sera respectée et la vulnérabilité supprimée.
