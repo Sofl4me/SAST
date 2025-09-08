@@ -174,7 +174,7 @@ Certains contenus statiques (ex. robots.txt) sont mis en cache.
 
 Impact faible, mais une politique de cache maîtrisée est recommandée.
 
-![Analyse ZAP Report](./artifacts/zap_rreporrt.html)
+![Analyse ZAP Report](./artifacts/zap_report.html)
 
 ✅ Conclusion
 
