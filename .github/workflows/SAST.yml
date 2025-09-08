@@ -1,57 +1,62 @@
-stages:
-  - build
-  - test
-  - sast
-  - dast
-  - audit
+name: Security Pipeline
 
-# Build de l'image Flask
-build_app:
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
-    - docker build -t my-vuln-app ./app
-  only:
-    - branches
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
 
-# SAST avec SonarQube
-sonar_scan:
-  stage: sast
-  image: sonarsource/sonar-scanner-cli:latest
-  variables:
-    SONAR_HOST_URL: "http://sonarqube:9000"
-  script:
-    - sonar-scanner -Dsonar.projectKey=$CI_PROJECT_NAME -Dsonar.sources=app -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
-  only:
-    - branches
+jobs:
+  build_app:
+    name: Build Flask App
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker Image
+        run: docker build -t my-vuln-app ./app
 
-# DAST avec OWASP ZAP
-dast_zap:
-  stage: dast
-  image: owasp/zap2docker-stable
-  variables:
-    APP_URL: "http://app:5000"
-  script:
-    - zap-baseline.py -t "$APP_URL" -r zap_report.html
-  artifacts:
-    when: always
-    paths:
-      - zap_report.html
-  only:
-    - branches
+  sonar_scan:
+    name: SAST with SonarQube
+    runs-on: ubuntu-latest
+    needs: build_app
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run SonarQube Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        with:
+          args: >
+            -Dsonar.projectKey=my-vuln-app
+            -Dsonar.organization=MON_ORGANISATION
+            -Dsonar.sources=app
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-# Audit dépendances Python (pip-audit)
-dep_audit:
-  stage: audit
-  image: python:3.10-slim
-  before_script:
-    - pip install pip-audit
-  script:
-    - pip-audit -r app/requirements.txt --format=json > pip_audit.json
-  artifacts:
-    paths:
-      - pip_audit.json
-  only:
-    - branches
+  dast_zap:
+    name: DAST with OWASP ZAP
+    runs-on: ubuntu-latest
+    needs: build_app
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          docker run --rm -v ${{ github.workspace }}/reports:/zap/reports \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://host.docker.internal:5000 \
+            -r /zap/reports/zap_report.html
+
+  dep_audit:
+    name: Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    needs: build_app
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        run: pip-audit -r app/requirements.txt --format=json > pip_audit.json
+      - name: Upload audit results
+        uses: actions/upload-artifact@v3
+        with:
+          name: pip-audit-report
+          path: pip_audit.json
