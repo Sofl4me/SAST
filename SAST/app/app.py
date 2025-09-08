@@ -1,13 +1,11 @@
-from flask import Flask, request, render_template_string
-from markupsafe import escape
+import sqlite3
 
-app = Flask(__name__)
 
-# Exemple volontairement vulnérable (XSS)
-@app.route('/')
-def index():
-    name = request.args.get('name', 'visiteur')
-    return render_template_string(f"<h1>Bonjour {name}</h1>")
+DB_PATH = ":memory:"
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+
+def get_db():
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+conn.row_factory = sqlite3.Row
+return conn
+
