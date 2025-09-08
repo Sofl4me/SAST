@@ -267,11 +267,74 @@ En appliquant l’une des corrections ci-dessus, la règle Sonar sera respectée
 
 ---
 
-## ✅ Conclusion
-- **SonarQube** → détecte les failles **dans le code source** (ex. XSS).  
-- **ZAP** → détecte les failles **au runtime** (mauvaises configurations HTTP, en-têtes manquants, comportements risqués).  
+# 🔐 Démo Flask & Analyse pip-audit
 
-En combinant les deux outils dans ton pipeline CI/CD, tu obtiens une **analyse de sécurité complète** :  
-- Vérification **statique** (code).  
-- Vérification **dynamique** (application en exécution).  
+## 📌 Contexte
+Ce projet met en place un pipeline qui déploie une **application Flask volontairement vulnérable**, puis lance une analyse avec **pip-audit**.  
+Objectif : détecter les **vulnérabilités connues (CVE)** dans les dépendances Python.
+
+---
+
+## 🚨 Résultat pip-audit
+
+### Ce que pip-audit a détecté
+- Plusieurs vulnérabilités critiques ont été trouvées dans les dépendances utilisées par Flask, en particulier **Flask** et **Werkzeug**.  
+- D’autres librairies comme **Click**, **Itsdangerous**, **Jinja2** et **MarkupSafe** ne présentent pas de vulnérabilité connue dans les versions scannées.
+
+---
+
+## 🔎 Détail des vulnérabilités
+
+### 1) Flask 2.3.2
+- **CVE** : `PYSEC-2023-62` / `CVE-2023-30861`  
+- **Problème** : risque de fuite de cookies/session via certains proxys.  
+- **Impact** : exposition de données sensibles entre utilisateurs.  
+- **Correction** : mettre à jour vers `2.3.3` ou `2.2.5`.
+
+---
+
+### 2) Werkzeug 2.2.3
+- **CVE-2023-46136 / PYSEC-2023-221**  
+  - **Problème** : parsing de fichiers malveillants volumineux.  
+  - **Impact** : attaque par **Denial of Service (DoS)**.  
+  - **Fix** : `2.3.8` ou `3.0.1`.
+
+- **CVE-2024-34069 / GHSA-2g68-c3qc-8985**  
+  - **Problème** : le debugger peut être exploité par un attaquant.  
+  - **Impact** : risque d’**exécution de code à distance (RCE)**.  
+  - **Fix** : `3.0.1`.
+
+- **CVE-2024-49767 / GHSA-f9vj-2wh5-fj8j**  
+  - **Problème** : mauvaise gestion de chemins UNC sous Windows + Python 3.11.  
+  - **Impact** : accès non intentionné à des fichiers.  
+  - **Fix** : `3.0.6`.
+
+- **GHSA-q34m-jh98-gwm2**  
+  - **Problème** : parsing `multipart/form-data` peut contourner les limites mémoire (`max_form_memory_size`).  
+  - **Impact** : épuisement mémoire (DoS).  
+  - **Fix** : `3.0.6`.
+
+---
+
+### 3) Autres dépendances
+- **Click 8.2.1** → pas de vulnérabilités.  
+- **Itsdangerous 2.2.0** → pas de vulnérabilités.  
+- **Jinja2 3.1.6** → pas de vulnérabilités.  
+- **MarkupSafe 3.0.2** → pas de vulnérabilités.  
+
+---
+
+## ✅ Comment corriger
+Mettre à jour Flask et Werkzeug vers des versions corrigées :
+```bash
+pip install --upgrade flask werkzeug
+```
+
+## ✅ Conclusion
+- SonarQube détecte les vulnérabilités dans le code source.
+- ZAP détecte les failles au runtime (en-têtes manquants, comportements dangereux).
+- pip-audit détecte les vulnérabilités dans les dépendances.
+
+En combinant les trois, on obtient une vision complète de la sécurité de l’application Flask :
+Code + Runtime + Supply Chain
 
