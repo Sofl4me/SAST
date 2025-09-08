@@ -61,10 +61,10 @@ templates/index.html
 <h1>Bonjour {{ name }}</h1>  <!-- auto-échappé -->
 ```
 
-Avec render_template_string (échappement explicite)
-
-from flask import Flask, request, render_template_string
+2) Avec render_template_string (échappement explicite)
 ```python
+from flask import Flask, request, render_template_string
+
 @app.route("/")
 def index():
     name = request.args.get("name", "visiteur")
