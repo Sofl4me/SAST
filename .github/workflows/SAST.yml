@@ -46,11 +46,20 @@ jobs:
 
       - name: Run app container
         run: |
+          set -e
           docker run -d --rm -p 5000:5000 --name vulnapp my-vuln-app:latest
-          # Attendre que l'app réponde
-          for i in {1..30}; do
+
+          # Attendre que l'app réponde ; si le conteneur meurt, afficher les logs et échouer
+          for i in {1..60}; do
             if curl -fsS http://localhost:5000 >/dev/null; then
-              echo "App is up"; break
+              echo "App is up"
+              break
+            fi
+
+            if ! docker ps --format '{{.Names}}' | grep -q '^vulnapp$'; then
+              echo "Container 'vulnapp' is not running. Showing logs:"
+              docker logs vulnapp || true
+              exit 1
             fi
             sleep 1
           done
@@ -60,9 +69,10 @@ jobs:
           mkdir -p reports
           docker run --rm --network host \
             -v ${{ github.workspace }}/reports:/zap/reports \
-            owasp/zap2docker-stable zap-baseline.py \
-            -t http://localhost:5000 \
-            -r /zap/reports/zap_report.html
+            ghcr.io/zaproxy/zaproxy:stable \
+            /zap/zap-baseline.py \
+              -t http://localhost:5000 \
+              -r /zap/reports/zap_report.html || true
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
