@@ -29,8 +29,8 @@ jobs:
           projectBaseDir: SAST
           # On passe explicitement key/org pour éviter "Project root configuration file: NONE"
           args: >
-            -Dsonar.projectKey=sof-org_SAST
-            -Dsonar.organization=sof-org
+            -Dsonar.projectKey=sofl4me_SAST
+            -Dsonar.organization=sofl4me
             -Dsonar.sources=app
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
