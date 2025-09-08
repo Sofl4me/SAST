@@ -2,9 +2,9 @@ name: CI DevSecOps
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "test1" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "test1" ]
 
 permissions:
   contents: read
