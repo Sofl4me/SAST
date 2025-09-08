@@ -94,102 +94,94 @@ Objectif : illustrer la détection de failles de configuration et de sécurité 
 
 ---
 
-📊 Analyse du rapport ZAP
+## 📊 Résultat ZAP
 
-L’outil OWASP ZAP (version 2.16.1) a été exécuté sur notre application (http://localhost:5000
-).
-Le scan a mis en évidence plusieurs points de sécurité, dont voici la synthèse :
+### Résumé des résultats
+- **High (élevé)** : 0  
+- **Medium (moyen)** : 2  
+- **Low (faible)** : 3  
+- **Informational (info)** : 1  
+- **False Positive** : 0  
 
-🔎 Résumé des résultats
+👉 Aucune vulnérabilité critique n’a été détectée, mais plusieurs **faiblesses de configuration HTTP** doivent être corrigées.
 
-High (élevé) : 0
+---
 
-Medium (moyen) : 2
+## 🔎 Détail des vulnérabilités
 
-Low (faible) : 3
+### 🔶 Vulnérabilités Medium
 
-Informational (info) : 1
+1. **Content Security Policy (CSP) Header Not Set**  
+   - **Description** : l’application ne définit pas de politique CSP. Cela laisse la porte ouverte aux attaques **XSS** et injections de contenu.  
+   - **Occurrences** : 4 (`/`, page d’accueil, `robots.txt`, `sitemap.xml`).  
+   - **Solution** : ajouter un en-tête HTTP :  
+     ```
+     Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'
+     ```  
+   - **Référence** : [MDN - CSP](https://developer.mozilla.org/fr/docs/Web/HTTP/CSP).
 
-False Positive : 0
+2. **Missing Anti-clickjacking Header**  
+   - **Description** : absence de `X-Frame-Options` ou `Content-Security-Policy: frame-ancestors`. Cela expose l’app au **clickjacking**.  
+   - **Occurrences** : 2 (`/` et page d’accueil).  
+   - **Solution** :  
+     ```
+     X-Frame-Options: DENY
+     ```  
+     ou bien  
+     ```
+     Content-Security-Policy: frame-ancestors 'none'
+     ```
 
-👉 Globalement, aucune vulnérabilité critique n’a été détectée, mais des faiblesses de configuration doivent être corrigées pour améliorer la sécurité.
+---
 
-⚠️ Vulnérabilités de niveau Medium
+### 🟡 Vulnérabilités Low
 
-Content Security Policy (CSP) Header Not Set
+1. **Insufficient Site Isolation Against Spectre**  
+   - **Description** : absence des en-têtes `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy`, `Cross-Origin-Opener-Policy`.  
+   - **Impact** : faiblesse face aux attaques **Spectre** (side-channel).  
+   - **Occurrences** : 6.  
+   - **Solution** :  
+     ```
+     Cross-Origin-Resource-Policy: same-origin
+     Cross-Origin-Opener-Policy: same-origin
+     Cross-Origin-Embedder-Policy: require-corp
+     ```
 
-Description : l’application ne définit pas de politique CSP. Cela laisse la porte ouverte aux attaques XSS et à l’injection de contenu.
+2. **Permissions Policy Header Not Set**  
+   - **Description** : l’en-tête `Permissions-Policy` est manquant. Cela permet potentiellement à des scripts d’accéder à des API sensibles (micro, caméra, géolocalisation).  
+   - **Occurrences** : 4.  
+   - **Solution** :  
+     ```
+     Permissions-Policy: geolocation=(), camera=(), microphone=()
+     ```
 
-Occurrences : 4 (page d’accueil, /, robots.txt, sitemap.xml).
+3. **X-Content-Type-Options Header Missing**  
+   - **Description** : absence de `X-Content-Type-Options: nosniff`.  
+   - **Impact** : permet à un navigateur d’interpréter un fichier avec le mauvais type MIME.  
+   - **Occurrences** : 2.  
+   - **Solution** :  
+     ```
+     X-Content-Type-Options: nosniff
+     ```
 
-Solution : ajouter un en-tête HTTP Content-Security-Policy précisant les sources autorisées (script-src, style-src, etc.).
+---
 
-Référence : MDN CSP
-.
+### 🔵 Observation Informational
 
-Missing Anti-clickjacking Header
+- **Storable and Cacheable Content**  
+  - **Description** : certains contenus statiques (ex. `robots.txt`) sont mis en cache.  
+  - **Impact** : faible, mais une politique de cache maîtrisée est recommandée.  
+  - **Solution** : ajuster les en-têtes :  
+    ```
+    Cache-Control: no-store
+    Pragma: no-cache
+    ```
 
-Description : absence d’en-tête X-Frame-Options ou de directive frame-ancestors (CSP). Cela expose au clickjacking.
+---
 
-Occurrences : 2 (/ et page d’accueil).
-
-Solution : ajouter X-Frame-Options: DENY ou SAMEORIGIN ; ou bien configurer Content-Security-Policy: frame-ancestors 'none'.
-
-⚠️ Vulnérabilités de niveau Low
-
-Insufficient Site Isolation Against Spectre
-
-Description : absence des en-têtes Cross-Origin-Resource-Policy, Cross-Origin-Embedder-Policy, Cross-Origin-Opener-Policy.
-
-Impact : faiblesse contre les attaques de type Spectre (side-channel).
-
-Occurrences : 6.
-
-Solution : définir les en-têtes (Cross-Origin-Resource-Policy: same-origin, etc.) pour renforcer l’isolation.
-
-Permissions Policy Header Not Set
-
-Description : l’en-tête Permissions-Policy (ex-Feature-Policy) est manquant. Cela permet potentiellement à des scripts d’utiliser des API sensibles (micro, caméra, géolocalisation).
-
-Occurrences : 4.
-
-Solution : définir une politique stricte, par ex. :
-
-Permissions-Policy: geolocation=(), camera=(), microphone=()
-
-
-X-Content-Type-Options Header Missing
-
-Description : absence de X-Content-Type-Options: nosniff. Cela permet à un navigateur d’interpréter un fichier comme un autre type MIME.
-
-Occurrences : 2.
-
-Solution : ajouter l’en-tête X-Content-Type-Options: nosniff.
-
-ℹ️ Observation de type Informational
-
-Storable and Cacheable Content
-
-Certains contenus statiques (ex. robots.txt) sont mis en cache.
-
-Impact faible, mais une politique de cache maîtrisée est recommandée.
-
+## 📑 Exemple de rapport
+Un rapport HTML détaillé est disponible :  
 ![Analyse ZAP Report](./artifacts/zap_report.html)
-
-✅ Conclusion
-
-Le rapport montre que :
-
-L’application ne présente pas de vulnérabilité critique (aucun High).
-
-Les failles sont essentiellement des manques de headers de sécurité dans les réponses HTTP.
-
-La remédiation passe principalement par la configuration du serveur ou du framework (Flask/Gunicorn).
-
-👉 Une fois les en-têtes ajoutés, une nouvelle analyse devrait confirmer une amélioration nette du score de sécurité.
-
-En appliquant l’une des corrections ci-dessus, la règle Sonar sera respectée et la vulnérabilité supprimée.
-
 
 ---
 
@@ -243,18 +235,6 @@ En appliquant l’une des corrections ci-dessus, la règle Sonar sera respectée
      ```python
      response.headers["X-Content-Type-Options"] = "nosniff"
      ```
-
----
-
-### 🔵 Informationnel
-- **Storable and Cacheable Content**  
-  - **Problème** : certains contenus peuvent être stockés ou mis en cache.  
-  - **Impact** : pas critique, mais peut poser problème si des données sensibles sont concernées.  
-  - **Correction** : définir des en-têtes HTTP adaptés, par exemple :  
-    ```
-    Cache-Control: no-store
-    Pragma: no-cache
-    ```
 
 ---
 
