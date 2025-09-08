@@ -13,27 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Build Docker Image
         run: docker build -t my-vuln-app ./SAST/app
 
   sonar_scan:
-    name: SAST with SonarQube
+    name: SAST with SonarCloud
     runs-on: ubuntu-latest
     needs: build_app
     steps:
       - uses: actions/checkout@v3
-
-      - name: Run SonarQube Scan
+      - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         with:
           projectBaseDir: SAST
-          args: >
-            -Dsonar.projectKey=my-vuln-app
-            -Dsonar.sources=app
-            -Dsonar.host.url=http://sonarqube:9000
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io"
 
   dast_zap:
     name: DAST with OWASP ZAP
@@ -41,7 +36,6 @@ jobs:
     needs: build_app
     steps:
       - uses: actions/checkout@v3
-
       - name: Run OWASP ZAP baseline scan
         run: |
           mkdir -p reports
@@ -49,7 +43,6 @@ jobs:
             owasp/zap2docker-stable zap-baseline.py \
             -t http://host.docker.internal:5000 \
             -r /zap/reports/zap_report.html
-
       - name: Upload ZAP report
         uses: actions/upload-artifact@v3
         with:
@@ -62,13 +55,10 @@ jobs:
     needs: build_app
     steps:
       - uses: actions/checkout@v3
-
       - name: Install pip-audit
         run: pip install pip-audit
-
       - name: Run pip-audit
         run: pip-audit -r SAST/app/requirements.txt --format=json > pip_audit.json
-
       - name: Upload audit results
         uses: actions/upload-artifact@v3
         with:
