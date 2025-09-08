@@ -67,10 +67,15 @@ jobs:
       - name: Run OWASP ZAP baseline scan
         run: |
           mkdir -p reports
+          chmod 777 reports
+
           docker run --rm --network host \
+            -u 0 \
             -v ${{ github.workspace }}/reports:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable \
             /zap/zap-baseline.py \
+              --autooff \
+              -I \
               -t http://localhost:5000 \
               -r zap_report.html || true
 
@@ -78,6 +83,7 @@ jobs:
             echo "⚠️ Aucun rapport généré par ZAP, création d’un placeholder"
             echo "<html><body><h1>Pas de rapport généré par OWASP ZAP</h1></body></html>" > reports/zap_report.html
           fi
+
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
